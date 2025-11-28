@@ -35,12 +35,13 @@ export function FeelingInput({ onActionGenerated }: FeelingInputProps) {
         title: 'Sentimento registrado',
         description: 'A CalmIA gerou uma nova recomendação para você.',
       })
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error logging feeling:', error)
       toast({
         variant: 'destructive',
         title: 'Erro',
         description:
+          error.message ||
           'Não foi possível processar seu sentimento. Tente novamente.',
       })
     } finally {
@@ -67,6 +68,7 @@ export function FeelingInput({ onActionGenerated }: FeelingInputProps) {
             value={feeling}
             onChange={(e) => setFeeling(e.target.value)}
             className="min-h-[120px] resize-none text-lg p-4 bg-white/80 backdrop-blur-sm focus:ring-primary/20"
+            disabled={isLoading}
           />
           <div className="flex justify-end">
             <Button
@@ -77,7 +79,7 @@ export function FeelingInput({ onActionGenerated }: FeelingInputProps) {
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Analisando...
+                  Analisando com IA...
                 </>
               ) : (
                 'Receber Recomendação'

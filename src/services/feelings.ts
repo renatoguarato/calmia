@@ -29,15 +29,12 @@ export const feelingsService = {
     if (feelingError) throw feelingError
 
     // 2. Call Edge Function to generate recommendation via Groq AI
-    // Explicitly passing the Authorization header with the session token
+    // We rely on the Supabase client to automatically attach the Authorization header
     const { data: actionData, error: actionError } =
       await supabase.functions.invoke('generate-recommendation', {
         body: {
           feeling_log_id: feelingData.id,
           feeling_description: description,
-        },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
         },
       })
 

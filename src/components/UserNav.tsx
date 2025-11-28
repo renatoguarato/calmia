@@ -1,4 +1,4 @@
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -23,15 +23,17 @@ export function UserNav() {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const profile = await profileService.getProfile()
-        setUserName(profile.name)
+        if (user) {
+          const profile = await profileService.getProfile()
+          if (profile?.name) {
+            setUserName(profile.name)
+          }
+        }
       } catch (error) {
         console.error('Error fetching profile:', error)
       }
     }
-    if (user) {
-      fetchProfile()
-    }
+    fetchProfile()
   }, [user])
 
   const handleSignOut = async () => {
@@ -39,13 +41,17 @@ export function UserNav() {
     navigate('/')
   }
 
+  const getInitials = (name: string) => {
+    const parts = name.trim().split(/\s+/)
+    if (parts.length === 0) return 'U'
+    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase()
+    const first = parts[0][0]
+    const last = parts[parts.length - 1][0]
+    return (first + last).toUpperCase()
+  }
+
   const initials = userName
-    ? userName
-        .split(' ')
-        .map((n) => n[0])
-        .join('')
-        .substring(0, 2)
-        .toUpperCase()
+    ? getInitials(userName)
     : user?.email?.substring(0, 2).toUpperCase() || 'U'
 
   return (
@@ -53,10 +59,6 @@ export function UserNav() {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-10 w-10 rounded-full">
           <Avatar className="h-10 w-10 border border-border">
-            <AvatarImage
-              src={`https://img.usecurling.com/ppl/thumbnail?gender=male&seed=${user?.id}`}
-              alt={userName}
-            />
             <AvatarFallback className="bg-primary/10 text-primary font-medium">
               {initials}
             </AvatarFallback>
@@ -66,7 +68,9 @@ export function UserNav() {
       <DropdownMenuContent className="w-56" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{userName}</p>
+            <p className="text-sm font-medium leading-none">
+              {userName || 'Usuário'}
+            </p>
             <p className="text-xs leading-none text-muted-foreground">
               {user?.email}
             </p>

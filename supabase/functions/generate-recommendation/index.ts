@@ -17,33 +17,54 @@ Deno.serve(async (req) => {
       throw new Error('GROQ_API_KEY is not set')
     }
 
-    // Create a Supabase client with the Auth context of the user
+    // Get the Authorization header from the request
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
-      throw new Error('Missing Authorization header')
+      return new Response(
+        JSON.stringify({ error: 'Missing Authorization header' }),
+        {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
+      )
     }
 
+    // Create a Supabase client with the Auth context of the user
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       global: {
         headers: { Authorization: authHeader },
       },
     })
 
-    // Get the user from the token
+    // Verify the user using the token
     const {
       data: { user },
       error: userError,
     } = await supabase.auth.getUser()
 
     if (userError || !user) {
-      throw new Error('Unauthorized')
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized', details: userError }),
+        {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
+      )
     }
 
     // Parse request body
     const { feeling_description, feeling_log_id } = await req.json()
 
     if (!feeling_description || !feeling_log_id) {
-      throw new Error('Missing feeling_description or feeling_log_id')
+      return new Response(
+        JSON.stringify({
+          error: 'Missing feeling_description or feeling_log_id',
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
+      )
     }
 
     // Fetch user profile to personalize the recommendation
@@ -55,7 +76,6 @@ Deno.serve(async (req) => {
 
     if (profileError) {
       console.error('Error fetching profile:', profileError)
-      // Continue without profile if it fails, but ideally we want it
     }
 
     // Construct the prompt for Groq

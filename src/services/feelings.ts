@@ -3,10 +3,17 @@ import { SuggestedAction } from '@/types/db'
 
 export const feelingsService = {
   async logFeeling(description: string) {
+    // Get the current session to ensure we have a valid token
     const {
-      data: { user },
-    } = await supabase.auth.getUser()
-    if (!user) throw new Error('User not authenticated')
+      data: { session },
+      error: sessionError,
+    } = await supabase.auth.getSession()
+
+    if (sessionError || !session) {
+      throw new Error('Sessão inválida. Por favor, faça login novamente.')
+    }
+
+    const user = session.user
 
     // 1. Log the feeling locally first
     const { data: feelingData, error: feelingError } = await supabase
@@ -22,11 +29,15 @@ export const feelingsService = {
     if (feelingError) throw feelingError
 
     // 2. Call Edge Function to generate recommendation via Groq AI
+    // Explicitly passing the Authorization header with the session token
     const { data: actionData, error: actionError } =
       await supabase.functions.invoke('generate-recommendation', {
         body: {
           feeling_log_id: feelingData.id,
           feeling_description: description,
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
         },
       })
 
@@ -44,14 +55,14 @@ export const feelingsService = {
 
   async getRecentActions() {
     const {
-      data: { user },
-    } = await supabase.auth.getUser()
-    if (!user) throw new Error('User not authenticated')
+      data: { session },
+    } = await supabase.auth.getSession()
+    if (!session) throw new Error('User not authenticated')
 
     const { data, error } = await supabase
       .from('suggested_actions')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', session.user.id)
       .order('created_at', { ascending: false })
       .limit(10)
 
@@ -61,9 +72,9 @@ export const feelingsService = {
 
   async completeAction(actionId: string) {
     const {
-      data: { user },
-    } = await supabase.auth.getUser()
-    if (!user) throw new Error('User not authenticated')
+      data: { session },
+    } = await supabase.auth.getSession()
+    if (!session) throw new Error('User not authenticated')
 
     const { data, error } = await supabase
       .from('suggested_actions')
@@ -72,7 +83,7 @@ export const feelingsService = {
         completed_at: new Date().toISOString(),
       })
       .eq('id', actionId)
-      .eq('user_id', user.id)
+      .eq('user_id', session.user.id)
       .select()
       .single()
 

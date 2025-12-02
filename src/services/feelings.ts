@@ -32,7 +32,9 @@ export const feelingsService = {
     // We rely on the Supabase client to automatically attach the Authorization header
     const { data: actionData, error: actionError } =
       await supabase.functions.invoke('generate-recommendation', {
+        headers: { Authorization: `Bearer ${session.access_token}` },
         body: {
+          user_id: user.id,
           feeling_log_id: feelingData.id,
           feeling_description: description,
         },

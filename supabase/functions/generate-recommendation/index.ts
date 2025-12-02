@@ -7,6 +7,7 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? ''
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
 
 Deno.serve(async (req) => {
+
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -17,43 +18,13 @@ Deno.serve(async (req) => {
       throw new Error('GROQ_API_KEY is not set')
     }
 
-    // Get the Authorization header from the request
-    const authHeader = req.headers.get('Authorization')
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: 'Missing Authorization header' }),
-        {
-          status: 401,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        },
-      )
-    }
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
-    // Create a Supabase client with the Auth context of the user
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      global: {
-        headers: { Authorization: authHeader },
-      },
-    })
-
-    // Verify the user using the token
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser()
-
-    if (userError || !user) {
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized', details: userError }),
-        {
-          status: 401,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        },
-      )
-    }
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Parse request body
-    const { feeling_description, feeling_log_id } = await req.json()
+    const { user_id, feeling_description, feeling_log_id } = await req.json()
 
     if (!feeling_description || !feeling_log_id) {
       return new Response(
@@ -71,7 +42,7 @@ Deno.serve(async (req) => {
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('*')
-      .eq('id', user.id)
+      .eq('id', user_id)
       .single()
 
     if (profileError) {
@@ -80,28 +51,28 @@ Deno.serve(async (req) => {
 
     // Construct the prompt for Groq
     const systemPrompt = `
-      You are an expert mental health assistant for professionals named CalmIA.
-      Your goal is to provide a single, practical, and short action (max 2 sentences) to help the user manage their current feeling or situation.
-      The action should be easy to implement immediately or within the same day.
+      Você é um assistente especialista em saúde mental para profissionais chamado CalmIA.
+      Seu objetivo é fornecer uma ação única, prática e curta (máximo 2 frases) para ajudar o usuário a lidar com seu sentimento ou situação atual.
+      A ação deve ser fácil de implementar imediatamente ou no mesmo dia.
       
-      User Profile:
-      - Name: ${profile?.name || 'User'}
-      - Profession: ${profile?.profession || 'Professional'}
-      - Time in company: ${profile?.time_in_company || 'Unknown'}
-      - Gender: ${profile?.gender || 'Unknown'}
-      - Health conditions: ${profile?.existing_diseases || 'None'}
-      - Medications: ${profile?.medications || 'None'}
+      Perfil do Usuário:
+      - Nome: ${profile?.name || 'Usuário'}
+      - Profissão: ${profile?.profession || 'Profissional'}
+      - Tempo de empresa: ${profile?.time_in_company || 'Desconhecido'}
+      - Gênero: ${profile?.gender || 'Desconhecido'}
+      - Condições de saúde: ${profile?.existing_diseases || 'Nenhuma'}
+      - Medicamentos: ${profile?.medications || 'Nenhum'}
       
-      Output must be a valid JSON object with the following structure:
+      A saída deve ser um objeto JSON válido com a seguinte estrutura:
       {
-        "action_description": "The suggested action text",
-        "action_category": "One word category (e.g., Relaxamento, Foco, Movimento, Social, Descanso, Produtividade)"
+        "action_description": "O texto da ação sugerida",
+        "action_category": "Categoria em uma palavra (ex: Relaxamento, Foco, Movimento, Social, Descanso, Produtividade)"
       }
       
-      Do not include any markdown formatting or explanations outside the JSON.
+      Não inclua formatação markdown ou explicações fora do JSON.
     `
 
-    const userPrompt = `I am feeling: "${feeling_description}". What should I do?`
+    const userPrompt = `Estou me sentindo: "${feeling_description}". O que devo fazer?`
 
     // Call Groq API
     const groqResponse = await fetch(
@@ -113,14 +84,14 @@ Deno.serve(async (req) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'llama3-70b-8192',
+          model: 'openai/gpt-oss-20b',
           messages: [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userPrompt },
           ],
           temperature: 0.7,
           max_tokens: 300,
-          response_format: { type: 'json_object' },
+          // response_format: { type: 'json_object' }, // Not supported by this model
         }),
       },
     )
@@ -134,13 +105,35 @@ Deno.serve(async (req) => {
     const groqData = await groqResponse.json()
     const content = groqData.choices[0]?.message?.content
 
+    console.log('Groq response:', groqData)
+
     if (!content) {
       throw new Error('No content received from Groq')
     }
 
+    // Parse JSON response from AI
+    const tryParseTasks = (text: string): any => {
+      try {
+        return JSON.parse(text)
+      } catch (_) {
+        // Try to extract JSON block
+        const match = text.match(/\{[\s\S]*\}/)
+        if (match) {
+          return JSON.parse(match[0])
+        }
+        throw new Error("Resposta da Groq não está em JSON válido")
+      }
+    }
+
+    const parsed = tryParseTasks(content)
+    console.log('Parsed content:', parsed)
+
     let recommendation
     try {
-      recommendation = JSON.parse(content)
+      // Clean up the content to ensure we have valid JSON
+      // This removes markdown code blocks if present (e.g. ```json ... ```)
+      const jsonStr = content.replace(/```json\n?|\n?```/g, '').trim()
+      recommendation = JSON.parse(jsonStr)
     } catch (e) {
       console.error('Error parsing JSON from Groq:', content)
       throw new Error('Invalid response format from AI')
@@ -150,7 +143,7 @@ Deno.serve(async (req) => {
     const { data: actionData, error: actionError } = await supabase
       .from('suggested_actions')
       .insert({
-        user_id: user.id,
+        user_id: user_id,
         feeling_log_id: feeling_log_id,
         action_description: recommendation.action_description,
         action_category: recommendation.action_category,

@@ -37,9 +37,9 @@ export function ExampleSection() {
                 </p>
 
                 <div className="pl-4 border-l-4 border-secondary space-y-2">
-                  <h4 className="font-semibold text-primary">
+                  <h3 className="font-semibold text-primary text-lg">
                     Ação sugerida: Técnica Pomodoro Adaptada
-                  </h4>
+                  </h3>
                   <p className="text-muted-foreground">
                     Para as próximas 2 horas, foque apenas na tarefa de maior
                     prioridade. Trabalhe 25 minutos e faça uma pausa de 5

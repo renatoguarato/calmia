@@ -75,7 +75,7 @@ export function ForCompaniesSection() {
             <div className="aspect-square rounded-2xl overflow-hidden bg-muted relative">
               <img
                 src="https://img.usecurling.com/p/600/600?q=modern%20office%20team%20meeting&color=green"
-                alt="Equipe em reunião"
+                alt="Equipe profissional colaborativa em reunião de trabalho em escritório moderno, representando saúde mental corporativa"
                 className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />

@@ -52,9 +52,13 @@ export function Navbar() {
         <Link
           to="/"
           onClick={scrollToTop}
-          className="text-2xl font-display font-bold text-primary hover:opacity-90 transition-opacity"
+          className="hover:opacity-90 transition-opacity"
         >
-          CalmIA
+          <img
+            src="https://img.usecurling.com/i?q=lotus&color=black"
+            alt="CalmIA"
+            className="h-8 w-auto"
+          />
         </Link>
 
         {/* Desktop Navigation */}

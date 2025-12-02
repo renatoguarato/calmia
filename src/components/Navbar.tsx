@@ -55,9 +55,9 @@ export function Navbar() {
           className="hover:opacity-90 transition-opacity"
         >
           <img
-            src="https://img.usecurling.com/i?q=lotus&color=black"
+            src="/CalmIA-Logo-Black.png"
             alt="CalmIA"
-            className="h-8 w-auto"
+            className="h-8 md:h-10 w-auto"
           />
         </Link>
 

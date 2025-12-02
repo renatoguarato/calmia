@@ -135,7 +135,7 @@ export default function Profile() {
   }
 
   return (
-    <div className="min-h-screen bg-muted/10 py-8">
+    <div className="min-h-screen bg-muted/10 pb-8 pt-24">
       <div className="container mx-auto px-4 max-w-3xl">
         <div className="mb-8 flex items-center gap-6">
           <Avatar className="h-20 w-20 border-2 border-white shadow-md">

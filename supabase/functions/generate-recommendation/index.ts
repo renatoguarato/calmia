@@ -42,50 +42,69 @@ Deno.serve(async (req) => {
       .single()
 
     const systemPrompt = `
-      Você é um assistente especialista em saúde mental para profissionais.
-      
-      Perfil: ${profile?.name || 'Usuário'}, ${profile?.profession || 'Profissional'}.
-      Sentimento: "${feeling_description}"
+      Você é um assistente especialista em saúde mental para profissionais expostos a alta pressão.
 
-      Retorne APENAS um JSON válido:
+      Perfil do Usuário:
+      - Nome: ${profile?.name || 'Usuário'}
+      - Profissão: ${profile?.profession || 'Profissional'}
+      - Tempo de empresa: ${profile?.time_in_company || 'Desconhecido'}
+      - Gênero: ${profile?.gender || 'Desconhecido'}
+      - Condições de saúde: ${profile?.existing_diseases || 'Nenhuma'}
+      - Medicamentos: ${profile?.medications || 'Nenhum'}
+
+      Sentimento relatado: "${feeling_description}"
+
+      INSTRUÇÕES DE SAÍDA:
+      Retorne APENAS um objeto JSON válido (sem markdown, sem explicações) com esta estrutura:
+
       {
-        "empathy": "Validar sentimento",
+        "empathy": "1 sentença validando o sentimento relatado",
         "immediate_actions": [
           {
-            "title": "Ação",
-            "category": "Foco|Relaxamento|...",
-            "estimated_time": "X min",
-            "steps": ["passo 1"],
-            "why_it_helps": "Explicação"
+            "title": "Nome curto da ação",
+            "category": "Relaxamento|Foco|Movimento|Social|Descanso|Produtividade",
+            "estimated_time": "X minutos",
+            "steps": ["passo 1", "passo 2", "passo 3"],
+            "why_it_helps": "Explicação clara de por que ajuda"
           }
         ],
         "routine_adjustments": [
           {
-            "title": "Ajuste",
-            "category": "Rotina",
-            "timeframe": "1 semana",
-            "instructions": "Detalhes"
+            "title": "Nome do ajuste",
+            "category": "categoria",
+            "timeframe": "1-2 semanas",
+            "instructions": "Instruções práticas detalhadas"
           }
         ],
         "leader_conversation": {
-          "is_appropriate": boolean,
-          "suggested_message": "texto ou null",
-          "context": "texto ou null"
+          "is_appropriate": true ou false,
+          "suggested_message": "Modelo de mensagem ou null se não apropriado",
+          "context": "Orientação sobre quando/como abordar ou null"
         },
         "risk_assessment": {
           "level": "low|medium|high",
-          "requires_emergency": boolean,
-          "emergency_instructions": "texto ou null",
-          "emergency_consent_request": "texto ou null",
-          "referral_needed": boolean,
-          "referral_message": "texto ou null"
+          "requires_emergency": booleano,
+          "emergency_instructions": "Instruções de emergência ou null",
+          "emergency_consent_request": "Texto pedindo consentimento ou null",
+          "referral_needed": booleano,
+          "referral_message": "Mensagem de encaminhamento ou null"
         },
         "metadata": {
-          "word_count": number,
-          "primary_categories": ["cat1"]
+          "word_count": número aproximado de palavras da resposta,
+          "primary_categories": ["array", "de", "categorias"]
         }
       }
-    `
+
+      REGRAS:
+      - 3 ações imediatas obrigatórias
+      - 2 ajustes de rotina obrigatórios
+      - Análise de risco SEMPRE presente
+      - Se detectar palavras-chave de risco (ideação suicida, desesperança, "quero morrer", etc.), definir level como "high" e requires_emergency como true
+      - Tom empático, direto, sem jargões clínicos
+      - NÃO diagnosticar condições médicas
+      - Total entre 120-300 palavras considerando todos os textos
+      - Retornar APENAS o JSON, sem formatação markdown
+      `
 
     const groqResponse = await fetch(
       'https://api.groq.com/openai/v1/chat/completions',
@@ -96,7 +115,7 @@ Deno.serve(async (req) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'llama3-70b-8192',
+          model: 'openai/gpt-oss-20b',
           messages: [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: feeling_description },

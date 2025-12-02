@@ -8,6 +8,9 @@ import Dashboard from './pages/Dashboard'
 import Profile from './pages/Profile'
 import NotFound from './pages/NotFound'
 import Layout from './components/Layout'
+import Privacy from './pages/Privacy'
+import About from './pages/About'
+import Legal from './pages/Legal'
 import { ProtectedRoute } from './components/ProtectedRoute'
 
 const App = () => (
@@ -21,6 +24,9 @@ const App = () => (
         <Routes>
           <Route element={<Layout />}>
             <Route path="/" element={<Index />} />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/legal" element={<Legal />} />
 
             {/* Protected Routes */}
             <Route element={<ProtectedRoute />}>

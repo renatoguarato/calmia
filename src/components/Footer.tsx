@@ -16,25 +16,27 @@ export function Footer() {
 
           <div className="flex flex-wrap justify-center gap-8">
             <Link
-              to="#"
+              to="/about"
               className="text-muted-foreground hover:text-primary transition-colors text-sm"
             >
               Sobre
             </Link>
             <Link
-              to="#"
+              to="/privacy"
               className="text-muted-foreground hover:text-primary transition-colors text-sm"
             >
               Privacidade
             </Link>
-            <Link
-              to="#"
-              className="text-muted-foreground hover:text-primary transition-colors text-sm"
-            >
+            {/* Since there is no dedicated Contact page requested, we keep the ContactModal triggers in other parts of the app. 
+                This link could act as a placeholder or redirect to home with contact modal if we implemented a context/URL state.
+                For now, we will link it to the home page anchor or similar if needed, but the request was specifically for Privacy, About and Legal.
+                I will disable the href for now or point to home as there isn't a /contact route.
+            */}
+            <span className="text-muted-foreground/50 text-sm cursor-not-allowed">
               Contato
-            </Link>
+            </span>
             <Link
-              to="#"
+              to="/legal"
               className="text-muted-foreground hover:text-primary transition-colors text-sm"
             >
               Legal

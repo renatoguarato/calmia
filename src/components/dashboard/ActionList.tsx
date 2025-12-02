@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { CheckCircle2, Circle, Clock } from 'lucide-react'
 import { feelingsService } from '@/services/feelings'
@@ -7,24 +7,15 @@ import { SuggestedAction } from '@/types/db'
 import { cn } from '@/lib/utils'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import { Link } from 'react-router-dom'
 
-interface ActionListProps {
-  newAction?: SuggestedAction | null
-}
-
-export function ActionList({ newAction }: ActionListProps) {
+export function ActionList() {
   const [actions, setActions] = useState<SuggestedAction[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     loadActions()
   }, [])
-
-  useEffect(() => {
-    if (newAction) {
-      setActions((prev) => [newAction, ...prev])
-    }
-  }, [newAction])
 
   const loadActions = async () => {
     try {
@@ -40,17 +31,7 @@ export function ActionList({ newAction }: ActionListProps) {
   const handleComplete = async (id: string) => {
     try {
       await feelingsService.completeAction(id)
-      setActions((prev) =>
-        prev.map((action) =>
-          action.id === id
-            ? {
-                ...action,
-                is_completed: true,
-                completed_at: new Date().toISOString(),
-              }
-            : action,
-        ),
-      )
+      setActions((prev) => prev.filter((action) => action.id !== id))
     } catch (error) {
       console.error('Error completing action:', error)
     }
@@ -69,28 +50,29 @@ export function ActionList({ newAction }: ActionListProps) {
   if (actions.length === 0) {
     return (
       <div className="text-center py-12 text-muted-foreground bg-muted/30 rounded-lg border border-dashed border-border">
-        <p>
-          Nenhuma recomendação ainda. Conte como você está se sentindo para
-          começar!
-        </p>
+        <p className="mb-2">Você não tem ações pendentes.</p>
+        <Link to="/history" className="text-primary hover:underline text-sm">
+          Ver histórico completo
+        </Link>
       </div>
     )
   }
 
   return (
     <div className="space-y-4">
-      <h3 className="text-xl font-display font-semibold text-foreground mb-4">
-        Suas Recomendações Recentes
-      </h3>
+      <div className="flex items-center justify-between">
+        <h3 className="text-xl font-display font-semibold text-foreground">
+          Suas Ações Pendentes
+        </h3>
+        <Link to="/history" className="text-sm text-primary hover:underline">
+          Ver Histórico
+        </Link>
+      </div>
+
       {actions.map((action) => (
         <Card
           key={action.id}
-          className={cn(
-            'transition-all duration-300 hover:shadow-md',
-            action.is_completed
-              ? 'bg-muted/50 opacity-70'
-              : 'bg-white border-l-4 border-l-primary',
-          )}
+          className="transition-all duration-300 hover:shadow-md bg-white border-l-4 border-l-primary"
         >
           <CardContent className="p-6 flex items-start justify-between gap-4">
             <div className="space-y-2">
@@ -98,41 +80,37 @@ export function ActionList({ newAction }: ActionListProps) {
                 <span className="bg-secondary/20 text-primary px-2 py-0.5 rounded-full text-xs font-medium">
                   {action.action_category || 'Geral'}
                 </span>
-                <span className="flex items-center gap-1">
-                  <Clock className="h-3 w-3" />
-                  {format(
-                    new Date(action.created_at),
-                    "d 'de' MMMM 'às' HH:mm",
-                    { locale: ptBR },
-                  )}
+                {action.estimated_time && (
+                  <span className="flex items-center gap-1 text-xs">
+                    <Clock className="h-3 w-3" />
+                    {action.estimated_time}
+                  </span>
+                )}
+                <span className="text-xs">•</span>
+                <span className="text-xs">
+                  {format(new Date(action.created_at), 'd MMM', {
+                    locale: ptBR,
+                  })}
                 </span>
               </div>
-              <p
-                className={cn(
-                  'text-lg font-medium',
-                  action.is_completed && 'line-through text-muted-foreground',
+              <div className="space-y-1">
+                <h4 className="font-semibold text-foreground">
+                  {action.title || action.action_description}
+                </h4>
+                {action.title && action.action_description !== action.title && (
+                  <p className="text-sm text-muted-foreground line-clamp-1">
+                    {action.action_description}
+                  </p>
                 )}
-              >
-                {action.action_description}
-              </p>
+              </div>
             </div>
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => !action.is_completed && handleComplete(action.id)}
-              disabled={action.is_completed}
-              className={cn(
-                'shrink-0 rounded-full h-10 w-10',
-                action.is_completed
-                  ? 'text-green-600'
-                  : 'text-muted-foreground hover:text-primary hover:bg-primary/10',
-              )}
+              onClick={() => handleComplete(action.id)}
+              className="shrink-0 rounded-full h-10 w-10 text-muted-foreground hover:text-primary hover:bg-primary/10"
             >
-              {action.is_completed ? (
-                <CheckCircle2 className="h-6 w-6" />
-              ) : (
-                <Circle className="h-6 w-6" />
-              )}
+              <Circle className="h-6 w-6" />
             </Button>
           </CardContent>
         </Card>

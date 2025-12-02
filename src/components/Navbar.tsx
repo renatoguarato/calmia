@@ -69,6 +69,14 @@ export function Navbar() {
                   Dashboard
                 </Button>
               </Link>
+              <Link to="/history">
+                <Button
+                  variant="ghost"
+                  className="text-foreground hover:text-primary"
+                >
+                  Histórico
+                </Button>
+              </Link>
               <UserNav />
             </>
           ) : (
@@ -109,6 +117,14 @@ export function Navbar() {
                         className="w-full justify-start text-lg"
                       >
                         Dashboard
+                      </Button>
+                    </Link>
+                    <Link to="/history">
+                      <Button
+                        variant="ghost"
+                        className="w-full justify-start text-lg"
+                      >
+                        Histórico
                       </Button>
                     </Link>
                     <Link to="/profile">

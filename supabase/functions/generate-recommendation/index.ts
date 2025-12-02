@@ -7,7 +7,6 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? ''
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
 
 Deno.serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
@@ -19,10 +18,8 @@ Deno.serve(async (req) => {
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-
     const supabase = createClient(supabaseUrl, supabaseKey)
 
-    // Parse request body
     const { user_id, feeling_description, feeling_log_id } = await req.json()
 
     if (!feeling_description || !feeling_log_id) {
@@ -37,84 +34,59 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Fetch user profile to personalize the recommendation
-    const { data: profile, error: profileError } = await supabase
+    // Fetch profile
+    const { data: profile } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', user_id)
       .single()
 
-    if (profileError) {
-      console.error('Error fetching profile:', profileError)
-    }
-
-    // Construct the prompt for Groq
     const systemPrompt = `
-      Você é um assistente especialista em saúde mental para profissionais expostos a alta pressão.
+      Você é um assistente especialista em saúde mental para profissionais.
+      
+      Perfil: ${profile?.name || 'Usuário'}, ${profile?.profession || 'Profissional'}.
+      Sentimento: "${feeling_description}"
 
-      Perfil do Usuário:
-      - Nome: ${profile?.name || 'Usuário'}
-      - Profissão: ${profile?.profession || 'Profissional'}
-      - Tempo de empresa: ${profile?.time_in_company || 'Desconhecido'}
-      - Gênero: ${profile?.gender || 'Desconhecido'}
-      - Condições de saúde: ${profile?.existing_diseases || 'Nenhuma'}
-      - Medicamentos: ${profile?.medications || 'Nenhum'}
-
-      Sentimento relatado: "${feeling_description}"
-
-      INSTRUÇÕES DE SAÍDA:
-      Retorne APENAS um objeto JSON válido (sem markdown, sem explicações) com esta estrutura:
-
+      Retorne APENAS um JSON válido:
       {
-        "empathy": "1 sentença validando o sentimento relatado",
+        "empathy": "Validar sentimento",
         "immediate_actions": [
           {
-            "title": "Nome curto da ação",
-            "category": "Relaxamento|Foco|Movimento|Social|Descanso|Produtividade",
-            "estimated_time": "X minutos",
-            "steps": ["passo 1", "passo 2", "passo 3"],
-            "why_it_helps": "Explicação clara de por que ajuda"
+            "title": "Ação",
+            "category": "Foco|Relaxamento|...",
+            "estimated_time": "X min",
+            "steps": ["passo 1"],
+            "why_it_helps": "Explicação"
           }
         ],
         "routine_adjustments": [
           {
-            "title": "Nome do ajuste",
-            "category": "categoria",
-            "timeframe": "1-2 semanas",
-            "instructions": "Instruções práticas detalhadas"
+            "title": "Ajuste",
+            "category": "Rotina",
+            "timeframe": "1 semana",
+            "instructions": "Detalhes"
           }
         ],
         "leader_conversation": {
-          "is_appropriate": true ou false,
-          "suggested_message": "Modelo de mensagem ou null se não apropriado",
-          "context": "Orientação sobre quando/como abordar ou null"
+          "is_appropriate": boolean,
+          "suggested_message": "texto ou null",
+          "context": "texto ou null"
         },
         "risk_assessment": {
           "level": "low|medium|high",
-          "requires_emergency": booleano,
-          "emergency_instructions": "Instruções de emergência ou null",
-          "emergency_consent_request": "Texto pedindo consentimento ou null",
-          "referral_needed": booleano,
-          "referral_message": "Mensagem de encaminhamento ou null"
+          "requires_emergency": boolean,
+          "emergency_instructions": "texto ou null",
+          "emergency_consent_request": "texto ou null",
+          "referral_needed": boolean,
+          "referral_message": "texto ou null"
         },
         "metadata": {
-          "word_count": número aproximado de palavras da resposta,
-          "primary_categories": ["array", "de", "categorias"]
+          "word_count": number,
+          "primary_categories": ["cat1"]
         }
       }
+    `
 
-      REGRAS:
-      - 3 ações imediatas obrigatórias
-      - 2 ajustes de rotina obrigatórios
-      - Análise de risco SEMPRE presente
-      - Se detectar palavras-chave de risco (ideação suicida, desesperança, "quero morrer", etc.), definir level como "high" e requires_emergency como true
-      - Tom empático, direto, sem jargões clínicos
-      - NÃO diagnosticar condições médicas
-      - Total entre 120-300 palavras considerando todos os textos
-      - Retornar APENAS o JSON, sem formatação markdown
-      `
-
-    // Call Groq API
     const groqResponse = await fetch(
       'https://api.groq.com/openai/v1/chat/completions',
       {
@@ -124,83 +96,73 @@ Deno.serve(async (req) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'openai/gpt-oss-20b',
+          model: 'llama3-70b-8192',
           messages: [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: feeling_description },
           ],
           temperature: 0.7,
-          max_tokens: 300,
-          // response_format: { type: 'json_object' }, // Not supported by this model
+          response_format: { type: 'json_object' },
         }),
       },
     )
 
-    if (!groqResponse.ok) {
-      const errorText = await groqResponse.text()
-      console.error('Groq API Error:', errorText)
-      throw new Error(`Groq API Error: ${groqResponse.statusText}`)
-    }
-
+    if (!groqResponse.ok) throw new Error('Groq API Error')
     const groqData = await groqResponse.json()
     const content = groqData.choices[0]?.message?.content
+    const recommendation = JSON.parse(content)
 
-    console.log('Groq response:', groqData)
+    // Update feeling log with AI response
+    await supabase
+      .from('feelings_log')
+      .update({ ai_response: recommendation })
+      .eq('id', feeling_log_id)
 
-    if (!content) {
-      throw new Error('No content received from Groq')
-    }
+    // Prepare actions to insert
+    const actionsToInsert = []
 
-    // Parse JSON response from AI
-    const tryParseTasks = (text: string): any => {
-      try {
-        return JSON.parse(text)
-      } catch (_) {
-        // Try to extract JSON block
-        const match = text.match(/\{[\s\S]*\}/)
-        if (match) {
-          return JSON.parse(match[0])
-        }
-        throw new Error('Resposta da Groq não está em JSON válido')
-      }
-    }
-
-    const parsed = tryParseTasks(content)
-    console.log('Parsed content:', parsed)
-
-    let recommendation
-    try {
-      // Clean up the content to ensure we have valid JSON
-      // This removes markdown code blocks if present (e.g. ```json ... ```)
-      const jsonStr = content.replace(/```json\n?|\n?```/g, '').trim()
-      recommendation = JSON.parse(jsonStr)
-    } catch (e) {
-      console.error('Error parsing JSON from Groq:', content)
-      throw new Error('Invalid response format from AI')
-    }
-
-    // Save the suggested action to the database
-    const { data: actionData, error: actionError } = await supabase
-      .from('suggested_actions')
-      .insert({
-        user_id: user_id,
-        feeling_log_id: feeling_log_id,
-        action_description: recommendation.action_description,
-        action_category: recommendation.action_category,
+    // Immediate actions
+    if (recommendation.immediate_actions?.length) {
+      recommendation.immediate_actions.forEach((action: any) => {
+        actionsToInsert.push({
+          user_id,
+          feeling_log_id,
+          title: action.title,
+          action_description: action.title, // fallback
+          action_category: action.category,
+          estimated_time: action.estimated_time,
+          steps: action.steps,
+          why_it_helps: action.why_it_helps,
+          action_type: 'immediate',
+        })
       })
-      .select()
-      .single()
-
-    if (actionError) {
-      console.error('Error saving action:', actionError)
-      throw new Error('Failed to save recommendation')
     }
 
-    return new Response(JSON.stringify(actionData), {
+    // Routine adjustments
+    if (recommendation.routine_adjustments?.length) {
+      recommendation.routine_adjustments.forEach((action: any) => {
+        actionsToInsert.push({
+          user_id,
+          feeling_log_id,
+          title: action.title,
+          action_description: action.instructions, // Use instructions as description
+          action_category: action.category,
+          estimated_time: action.timeframe,
+          why_it_helps: 'Ajuste de rotina para prevenção a longo prazo.',
+          action_type: 'routine',
+        })
+      })
+    }
+
+    if (actionsToInsert.length > 0) {
+      await supabase.from('suggested_actions').insert(actionsToInsert)
+    }
+
+    return new Response(JSON.stringify({ success: true, recommendation }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   } catch (error) {
-    console.error('Edge Function Error:', error)
+    console.error('Error:', error)
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

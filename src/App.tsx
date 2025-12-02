@@ -6,6 +6,8 @@ import { AuthProvider } from '@/hooks/use-auth'
 import Index from './pages/Index'
 import Dashboard from './pages/Dashboard'
 import Profile from './pages/Profile'
+import RecommendationDetails from './pages/RecommendationDetails'
+import History from './pages/History'
 import NotFound from './pages/NotFound'
 import Layout from './components/Layout'
 import Privacy from './pages/Privacy'
@@ -32,6 +34,11 @@ const App = () => (
             <Route element={<ProtectedRoute />}>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/profile" element={<Profile />} />
+              <Route path="/history" element={<History />} />
+              <Route
+                path="/recommendations/:id"
+                element={<RecommendationDetails />}
+              />
             </Route>
           </Route>
           <Route path="*" element={<NotFound />} />

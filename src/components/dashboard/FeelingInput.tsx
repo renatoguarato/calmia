@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import {
@@ -11,16 +12,12 @@ import {
 import { feelingsService } from '@/services/feelings'
 import { useToast } from '@/hooks/use-toast'
 import { Loader2, Sparkles } from 'lucide-react'
-import { SuggestedAction } from '@/types/db'
 
-interface FeelingInputProps {
-  onActionGenerated: (action: SuggestedAction) => void
-}
-
-export function FeelingInput({ onActionGenerated }: FeelingInputProps) {
+export function FeelingInput() {
   const [feeling, setFeeling] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const { toast } = useToast()
+  const navigate = useNavigate()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -28,13 +25,13 @@ export function FeelingInput({ onActionGenerated }: FeelingInputProps) {
 
     setIsLoading(true)
     try {
-      const action = await feelingsService.logFeeling(feeling)
-      onActionGenerated(action)
+      const { feelingLogId } = await feelingsService.logFeeling(feeling)
       setFeeling('')
       toast({
-        title: 'Sentimento registrado',
-        description: 'A CalmIA gerou uma nova recomendação para você.',
+        title: 'Análise concluída',
+        description: 'Redirecionando para suas recomendações...',
       })
+      navigate(`/recommendations/${feelingLogId}`)
     } catch (error: any) {
       console.error('Error logging feeling:', error)
       toast({
@@ -82,7 +79,7 @@ export function FeelingInput({ onActionGenerated }: FeelingInputProps) {
                   Analisando com IA...
                 </>
               ) : (
-                'Receber Recomendação'
+                'Gerar Recomendações'
               )}
             </Button>
           </div>

@@ -1,13 +1,11 @@
 import { useState, useEffect } from 'react'
 import { FeelingInput } from '@/components/dashboard/FeelingInput'
 import { ActionList } from '@/components/dashboard/ActionList'
-import { SuggestedAction } from '@/types/db'
 import { useAuth } from '@/hooks/use-auth'
 import { profileService } from '@/services/profile'
 
 export default function Dashboard() {
   const { user } = useAuth()
-  const [newAction, setNewAction] = useState<SuggestedAction | null>(null)
   const [userName, setUserName] = useState<string>('')
 
   useEffect(() => {
@@ -41,10 +39,10 @@ export default function Dashboard() {
           </p>
         </div>
 
-        <FeelingInput onActionGenerated={setNewAction} />
+        <FeelingInput />
 
         <div className="pt-8">
-          <ActionList newAction={newAction} />
+          <ActionList />
         </div>
       </div>
     </div>

@@ -1,25 +1,18 @@
 import { supabase } from '@/lib/supabase/client'
-import { SuggestedAction } from '@/types/db'
+import { FeelingLog, SuggestedAction } from '@/types/db'
 
 export const feelingsService = {
   async logFeeling(description: string) {
-    // Get the current session to ensure we have a valid token
     const {
       data: { session },
-      error: sessionError,
     } = await supabase.auth.getSession()
+    if (!session) throw new Error('Sessão inválida.')
 
-    if (sessionError || !session) {
-      throw new Error('Sessão inválida. Por favor, faça login novamente.')
-    }
-
-    const user = session.user
-
-    // 1. Log the feeling locally first
+    // 1. Log feeling
     const { data: feelingData, error: feelingError } = await supabase
       .from('feelings_log')
       .insert({
-        user_id: user.id,
+        user_id: session.user.id,
         feeling_description: description,
         feeling_category: 'general',
       })
@@ -28,28 +21,22 @@ export const feelingsService = {
 
     if (feelingError) throw feelingError
 
-    // 2. Call Edge Function to generate recommendation via Groq AI
-    // We rely on the Supabase client to automatically attach the Authorization header
-    const { data: actionData, error: actionError } =
-      await supabase.functions.invoke('generate-recommendation', {
+    // 2. Call AI
+    const { error: actionError } = await supabase.functions.invoke(
+      'generate-recommendation',
+      {
         headers: { Authorization: `Bearer ${session.access_token}` },
         body: {
-          user_id: user.id,
+          user_id: session.user.id,
           feeling_log_id: feelingData.id,
           feeling_description: description,
         },
-      })
+      },
+    )
 
-    if (actionError) {
-      console.error('Error invoking edge function:', actionError)
-      throw new Error('Falha ao gerar recomendação com IA. Tente novamente.')
-    }
+    if (actionError) throw new Error('Falha ao gerar recomendação.')
 
-    if (!actionData) {
-      throw new Error('Nenhuma recomendação foi gerada.')
-    }
-
-    return actionData as SuggestedAction
+    return { feelingLogId: feelingData.id }
   },
 
   async getRecentActions() {
@@ -62,6 +49,7 @@ export const feelingsService = {
       .from('suggested_actions')
       .select('*')
       .eq('user_id', session.user.id)
+      .eq('is_completed', false)
       .order('created_at', { ascending: false })
       .limit(10)
 
@@ -88,5 +76,49 @@ export const feelingsService = {
 
     if (error) throw error
     return data as SuggestedAction
+  },
+
+  async getHistory() {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
+    if (!session) throw new Error('User not authenticated')
+
+    const { data, error } = await supabase
+      .from('feelings_log')
+      .select('*')
+      .eq('user_id', session.user.id)
+      .order('created_at', { ascending: false })
+
+    if (error) throw error
+    return data as FeelingLog[]
+  },
+
+  async getFeelingDetails(id: string) {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
+    if (!session) throw new Error('User not authenticated')
+
+    // Fetch log with AI response
+    const { data: log, error: logError } = await supabase
+      .from('feelings_log')
+      .select('*')
+      .eq('id', id)
+      .eq('user_id', session.user.id)
+      .single()
+
+    if (logError) throw logError
+
+    // Fetch related actions
+    const { data: actions, error: actionsError } = await supabase
+      .from('suggested_actions')
+      .select('*')
+      .eq('feeling_log_id', id)
+      .order('action_type', { ascending: true }) // immediate first
+
+    if (actionsError) throw actionsError
+
+    return { log: log as FeelingLog, actions: actions as SuggestedAction[] }
   },
 }

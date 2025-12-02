@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { FeelingInput } from '@/components/dashboard/FeelingInput'
-import { ActionList } from '@/components/dashboard/ActionList'
 import { useAuth } from '@/hooks/use-auth'
 import { profileService } from '@/services/profile'
 
@@ -40,10 +39,6 @@ export default function Dashboard() {
         </div>
 
         <FeelingInput />
-
-        <div className="pt-8">
-          <ActionList />
-        </div>
       </div>
     </div>
   )

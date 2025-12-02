@@ -1,4 +1,4 @@
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -14,20 +14,19 @@ import { Link, useNavigate } from 'react-router-dom'
 import { User, LogOut, LayoutDashboard } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { profileService } from '@/services/profile'
+import { Profile } from '@/types/db'
 
 export function UserNav() {
   const { signOut, user } = useAuth()
   const navigate = useNavigate()
-  const [userName, setUserName] = useState<string>('')
+  const [profile, setProfile] = useState<Profile | null>(null)
 
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         if (user) {
-          const profile = await profileService.getProfile()
-          if (profile?.name) {
-            setUserName(profile.name)
-          }
+          const data = await profileService.getProfile()
+          setProfile(data)
         }
       } catch (error) {
         console.error('Error fetching profile:', error)
@@ -50,8 +49,9 @@ export function UserNav() {
     return (first + last).toUpperCase()
   }
 
-  const initials = userName
-    ? getInitials(userName)
+  const displayName = profile?.name || user?.email || 'Usuário'
+  const initials = profile?.name
+    ? getInitials(profile.name)
     : user?.email?.substring(0, 2).toUpperCase() || 'U'
 
   return (
@@ -59,6 +59,7 @@ export function UserNav() {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-10 w-10 rounded-full">
           <Avatar className="h-10 w-10 border border-border">
+            <AvatarImage src={profile?.avatar_url || ''} alt={displayName} />
             <AvatarFallback className="bg-primary/10 text-primary font-medium">
               {initials}
             </AvatarFallback>
@@ -68,9 +69,7 @@ export function UserNav() {
       <DropdownMenuContent className="w-56" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">
-              {userName || 'Usuário'}
-            </p>
+            <p className="text-sm font-medium leading-none">{displayName}</p>
             <p className="text-xs leading-none text-muted-foreground">
               {user?.email}
             </p>

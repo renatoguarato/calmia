@@ -29,9 +29,11 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useToast } from '@/hooks/use-toast'
 import { profileService } from '@/services/profile'
-import { Loader2 } from 'lucide-react'
+import { Loader2, User } from 'lucide-react'
+import { Profile as ProfileType } from '@/types/db'
 
 const profileSchema = z.object({
   name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
@@ -52,6 +54,7 @@ export default function Profile() {
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  const [profileData, setProfileData] = useState<ProfileType | null>(null)
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
@@ -73,6 +76,7 @@ export default function Profile() {
     const loadProfile = async () => {
       try {
         const profile = await profileService.getProfile()
+        setProfileData(profile)
         form.reset({
           name: profile.name || '',
           profession: profile.profession || '',
@@ -107,6 +111,9 @@ export default function Profile() {
         title: 'Perfil atualizado',
         description: 'Suas informações foram salvas com sucesso.',
       })
+      // Refresh profile data to update UI if needed
+      const updatedProfile = await profileService.getProfile()
+      setProfileData(updatedProfile)
     } catch (error) {
       console.error('Error updating profile:', error)
       toast({
@@ -130,13 +137,21 @@ export default function Profile() {
   return (
     <div className="min-h-screen bg-muted/10 py-8">
       <div className="container mx-auto px-4 max-w-3xl">
-        <div className="mb-8">
-          <h1 className="text-3xl font-display font-bold text-foreground">
-            Meu Perfil
-          </h1>
-          <p className="text-muted-foreground">
-            Gerencie suas informações pessoais e preferências.
-          </p>
+        <div className="mb-8 flex items-center gap-6">
+          <Avatar className="h-20 w-20 border-2 border-white shadow-md">
+            <AvatarImage src={profileData?.avatar_url || ''} />
+            <AvatarFallback className="bg-primary/10 text-primary text-2xl font-display">
+              <User size={32} />
+            </AvatarFallback>
+          </Avatar>
+          <div>
+            <h1 className="text-3xl font-display font-bold text-foreground">
+              Meu Perfil
+            </h1>
+            <p className="text-muted-foreground">
+              Gerencie suas informações pessoais e preferências.
+            </p>
+          </div>
         </div>
 
         <Form {...form}>

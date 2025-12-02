@@ -11,6 +11,7 @@ export interface Profile {
   emergency_contact_name: string | null
   emergency_contact_phone: string | null
   ai_data_consent: boolean
+  avatar_url: string | null
 }
 
 export interface FeelingLog {

@@ -83,14 +83,15 @@ export function AuthModal({ trigger, open, onOpenChange }: AuthModalProps) {
   const handleGoogleLogin = async () => {
     setIsLoading(true)
     const { error } = await signInWithGoogle()
-    // Note: successful redirect happens at the browser level, so we might not see this return unless it fails immediately.
 
     if (error) {
       setIsLoading(false)
       toast({
         variant: 'destructive',
         title: 'Erro ao entrar com Google',
-        description: error.message || 'Não foi possível conectar com o Google.',
+        description:
+          error.message ||
+          'Verifique se o provedor Google está habilitado no Supabase.',
       })
     }
   }

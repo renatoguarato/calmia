@@ -3,7 +3,6 @@ import { HowItWorksSection } from '@/components/sections/HowItWorksSection'
 import { BenefitsSection } from '@/components/sections/BenefitsSection'
 import { ForCompaniesSection } from '@/components/sections/ForCompaniesSection'
 import { ExampleSection } from '@/components/sections/ExampleSection'
-import { SocialProofSection } from '@/components/sections/SocialProofSection'
 import { FAQSection } from '@/components/sections/FAQSection'
 
 const Index = () => {
@@ -14,7 +13,6 @@ const Index = () => {
       <BenefitsSection />
       <ForCompaniesSection />
       <ExampleSection />
-      <SocialProofSection />
       <FAQSection />
     </div>
   )

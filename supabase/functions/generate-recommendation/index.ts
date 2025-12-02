@@ -7,7 +7,6 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? ''
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
 
 Deno.serve(async (req) => {
-
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -18,10 +17,10 @@ Deno.serve(async (req) => {
       throw new Error('GROQ_API_KEY is not set')
     }
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabase = createClient(supabaseUrl, supabaseKey)
 
     // Parse request body
     const { user_id, feeling_description, feeling_log_id } = await req.json()
@@ -121,7 +120,7 @@ Deno.serve(async (req) => {
         if (match) {
           return JSON.parse(match[0])
         }
-        throw new Error("Resposta da Groq não está em JSON válido")
+        throw new Error('Resposta da Groq não está em JSON válido')
       }
     }
 

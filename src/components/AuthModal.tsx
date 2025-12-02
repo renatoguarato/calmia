@@ -22,7 +22,7 @@ interface AuthModalProps {
 }
 
 export function AuthModal({ trigger, open, onOpenChange }: AuthModalProps) {
-  const { signIn, signUp } = useAuth()
+  const { signIn, signUp, signInWithGoogle } = useAuth()
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
   const [email, setEmail] = useState('')
@@ -80,6 +80,21 @@ export function AuthModal({ trigger, open, onOpenChange }: AuthModalProps) {
     }
   }
 
+  const handleGoogleLogin = async () => {
+    setIsLoading(true)
+    const { error } = await signInWithGoogle()
+    // Note: successful redirect happens at the browser level, so we might not see this return unless it fails immediately.
+
+    if (error) {
+      setIsLoading(false)
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao entrar com Google',
+        description: error.message || 'Não foi possível conectar com o Google.',
+      })
+    }
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
@@ -93,6 +108,37 @@ export function AuthModal({ trigger, open, onOpenChange }: AuthModalProps) {
             bem-estar.
           </DialogDescription>
         </DialogHeader>
+
+        <div className="flex flex-col gap-4 py-4">
+          <Button
+            variant="outline"
+            className="w-full gap-2 relative"
+            onClick={handleGoogleLogin}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <img
+                src="https://img.usecurling.com/i?q=google"
+                alt="Google"
+                className="h-4 w-4"
+              />
+            )}
+            Entrar com Google
+          </Button>
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-white/95 px-2 text-muted-foreground">
+                Ou continue com email
+              </span>
+            </div>
+          </div>
+        </div>
+
         <Tabs defaultValue="login" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="login">Entrar</TabsTrigger>

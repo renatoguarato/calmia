@@ -3,16 +3,21 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { feelingsService } from '@/services/feelings'
 import { FeelingLog, SuggestedAction } from '@/types/db'
 import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
 import {
   Loader2,
   ArrowLeft,
@@ -22,18 +27,22 @@ import {
   MessageSquare,
   Zap,
   Repeat,
+  Trash2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useToast } from '@/hooks/use-toast'
 
 export default function RecommendationDetails() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const { toast } = useToast()
   const [loading, setLoading] = useState(true)
   const [data, setData] = useState<{
     log: FeelingLog
     actions: SuggestedAction[]
   } | null>(null)
   const [completing, setCompleting] = useState<string | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
     if (!id) return
@@ -71,6 +80,27 @@ export default function RecommendationDetails() {
     }
   }
 
+  const handleDelete = async () => {
+    if (!id) return
+    setIsDeleting(true)
+    try {
+      await feelingsService.deleteFeeling(id)
+      toast({
+        title: 'Análise excluída',
+        description: 'A análise e todas as ações relacionadas foram removidas.',
+      })
+      navigate('/history')
+    } catch (error) {
+      console.error('Error deleting analysis:', error)
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao excluir',
+        description: 'Ocorreu um erro ao tentar excluir a análise.',
+      })
+      setIsDeleting(false)
+    }
+  }
+
   if (loading || !data) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-muted/10">
@@ -87,25 +117,72 @@ export default function RecommendationDetails() {
   return (
     <div className="min-h-screen bg-muted/10 pt-24 pb-12">
       <div className="container mx-auto px-4 max-w-4xl space-y-8">
-        <div className="flex items-center gap-4">
-          <Link to="/history">
-            <Button variant="ghost" size="icon">
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-          </Link>
-          <div>
-            <h1 className="text-2xl md:text-3xl font-display font-bold text-foreground">
-              Análise & Recomendação
-            </h1>
-            <p className="text-muted-foreground text-sm">
-              Gerado em {new Date(log.created_at).toLocaleDateString('pt-BR')}{' '}
-              às{' '}
-              {new Date(log.created_at).toLocaleTimeString('pt-BR', {
-                hour: '2-digit',
-                minute: '2-digit',
-              })}
-            </p>
+        {/* Header with Back button and Delete Action */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <Link to="/history">
+              <Button variant="ghost" size="icon">
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+            </Link>
+            <div>
+              <h1 className="text-2xl md:text-3xl font-display font-bold text-foreground">
+                Análise & Recomendação
+              </h1>
+              <p className="text-muted-foreground text-sm">
+                Gerado em {new Date(log.created_at).toLocaleDateString('pt-BR')}{' '}
+                às{' '}
+                {new Date(log.created_at).toLocaleTimeString('pt-BR', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
+              </p>
+            </div>
           </div>
+
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="ghost"
+                className="text-destructive hover:text-destructive hover:bg-destructive/10 self-start md:self-auto"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Excluir Análise
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Excluir esta análise?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Esta ação não pode ser desfeita. Isso excluirá permanentemente
+                  o registro deste sentimento e todas as ações sugeridas
+                  associadas.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={isDeleting}>
+                  Cancelar
+                </AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={(e) => {
+                    e.preventDefault()
+                    handleDelete()
+                  }}
+                  disabled={isDeleting}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  {isDeleting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Excluindo...
+                    </>
+                  ) : (
+                    'Excluir'
+                  )}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
 
         {/* Risk Assessment Alert */}

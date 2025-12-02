@@ -121,4 +121,19 @@ export const feelingsService = {
 
     return { log: log as FeelingLog, actions: actions as SuggestedAction[] }
   },
+
+  async deleteFeeling(id: string) {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
+    if (!session) throw new Error('User not authenticated')
+
+    const { error } = await supabase
+      .from('feelings_log')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', session.user.id)
+
+    if (error) throw error
+  },
 }

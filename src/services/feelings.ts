@@ -128,12 +128,16 @@ export const feelingsService = {
     } = await supabase.auth.getSession()
     if (!session) throw new Error('User not authenticated')
 
-    const { error } = await supabase
+    const { error, count } = await supabase
       .from('feelings_log')
-      .delete()
+      .delete({ count: 'exact' })
       .eq('id', id)
       .eq('user_id', session.user.id)
 
     if (error) throw error
+
+    if (count === 0) {
+      throw new Error('Análise não encontrada ou permissão negada.')
+    }
   },
 }

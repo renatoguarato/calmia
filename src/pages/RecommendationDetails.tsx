@@ -95,7 +95,10 @@ export default function RecommendationDetails() {
       toast({
         variant: 'destructive',
         title: 'Erro ao excluir',
-        description: 'Ocorreu um erro ao tentar excluir a análise.',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'Ocorreu um erro ao tentar excluir a análise.',
       })
       setIsDeleting(false)
     }

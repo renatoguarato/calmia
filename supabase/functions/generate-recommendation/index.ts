@@ -50,10 +50,8 @@ Deno.serve(async (req) => {
 
     // Construct the prompt for Groq
     const systemPrompt = `
-      Você é um assistente especialista em saúde mental para profissionais chamado CalmIA.
-      Seu objetivo é fornecer uma ação única, prática e curta (máximo 2 frases) para ajudar o usuário a lidar com seu sentimento ou situação atual.
-      A ação deve ser fácil de implementar imediatamente ou no mesmo dia.
-      
+      Você é um assistente especialista em saúde mental para profissionais expostos a alta pressão.
+
       Perfil do Usuário:
       - Nome: ${profile?.name || 'Usuário'}
       - Profissão: ${profile?.profession || 'Profissional'}
@@ -61,17 +59,60 @@ Deno.serve(async (req) => {
       - Gênero: ${profile?.gender || 'Desconhecido'}
       - Condições de saúde: ${profile?.existing_diseases || 'Nenhuma'}
       - Medicamentos: ${profile?.medications || 'Nenhum'}
-      
-      A saída deve ser um objeto JSON válido com a seguinte estrutura:
-      {
-        "action_description": "O texto da ação sugerida",
-        "action_category": "Categoria em uma palavra (ex: Relaxamento, Foco, Movimento, Social, Descanso, Produtividade)"
-      }
-      
-      Não inclua formatação markdown ou explicações fora do JSON.
-    `
 
-    const userPrompt = `Estou me sentindo: "${feeling_description}". O que devo fazer?`
+      Sentimento relatado: "${feeling_description}"
+
+      INSTRUÇÕES DE SAÍDA:
+      Retorne APENAS um objeto JSON válido (sem markdown, sem explicações) com esta estrutura:
+
+      {
+        "empathy": "1 sentença validando o sentimento relatado",
+        "immediate_actions": [
+          {
+            "title": "Nome curto da ação",
+            "category": "Relaxamento|Foco|Movimento|Social|Descanso|Produtividade",
+            "estimated_time": "X minutos",
+            "steps": ["passo 1", "passo 2", "passo 3"],
+            "why_it_helps": "Explicação clara de por que ajuda"
+          }
+        ],
+        "routine_adjustments": [
+          {
+            "title": "Nome do ajuste",
+            "category": "categoria",
+            "timeframe": "1-2 semanas",
+            "instructions": "Instruções práticas detalhadas"
+          }
+        ],
+        "leader_conversation": {
+          "is_appropriate": true ou false,
+          "suggested_message": "Modelo de mensagem ou null se não apropriado",
+          "context": "Orientação sobre quando/como abordar ou null"
+        },
+        "risk_assessment": {
+          "level": "low|medium|high",
+          "requires_emergency": booleano,
+          "emergency_instructions": "Instruções de emergência ou null",
+          "emergency_consent_request": "Texto pedindo consentimento ou null",
+          "referral_needed": booleano,
+          "referral_message": "Mensagem de encaminhamento ou null"
+        },
+        "metadata": {
+          "word_count": número aproximado de palavras da resposta,
+          "primary_categories": ["array", "de", "categorias"]
+        }
+      }
+
+      REGRAS:
+      - 3 ações imediatas obrigatórias
+      - 2 ajustes de rotina obrigatórios
+      - Análise de risco SEMPRE presente
+      - Se detectar palavras-chave de risco (ideação suicida, desesperança, "quero morrer", etc.), definir level como "high" e requires_emergency como true
+      - Tom empático, direto, sem jargões clínicos
+      - NÃO diagnosticar condições médicas
+      - Total entre 120-300 palavras considerando todos os textos
+      - Retornar APENAS o JSON, sem formatação markdown
+      `
 
     // Call Groq API
     const groqResponse = await fetch(
@@ -86,7 +127,7 @@ Deno.serve(async (req) => {
           model: 'openai/gpt-oss-20b',
           messages: [
             { role: 'system', content: systemPrompt },
-            { role: 'user', content: userPrompt },
+            { role: 'user', content: feeling_description },
           ],
           temperature: 0.7,
           max_tokens: 300,

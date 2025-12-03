@@ -104,6 +104,7 @@ Deno.serve(async (req) => {
       - NÃO diagnosticar condições médicas
       - Total entre 120-300 palavras considerando todos os textos
       - Retornar APENAS o JSON, sem formatação markdown
+      - Respostas em português brasileiro
       `
 
     const groqResponse = await fetch(

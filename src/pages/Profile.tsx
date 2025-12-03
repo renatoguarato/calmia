@@ -342,7 +342,7 @@ export default function Profile() {
                     <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                       <div className="space-y-0.5">
                         <FormLabel className="text-base">
-                          Consentimento para uso de dados para IA
+                          Habilitar Consentimento para Dados de IA
                         </FormLabel>
                         <FormDescription>
                           Permitir que a CalmIA utilize seus dados anonimizados

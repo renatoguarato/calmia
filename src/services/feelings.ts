@@ -8,6 +8,21 @@ export const feelingsService = {
     } = await supabase.auth.getSession()
     if (!session) throw new Error('Sessão inválida.')
 
+    // 0. Check AI Consent
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('ai_data_consent')
+      .eq('id', session.user.id)
+      .single()
+
+    if (profileError) throw new Error('Erro ao verificar permissões do perfil.')
+
+    if (!profile?.ai_data_consent) {
+      throw new Error(
+        'Por favor, ative o consentimento de IA nas configurações do seu perfil para gerar recomendações.',
+      )
+    }
+
     // 1. Log feeling
     const { data: feelingData, error: feelingError } = await supabase
       .from('feelings_log')

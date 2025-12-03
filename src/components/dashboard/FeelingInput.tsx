@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import {
@@ -10,14 +10,30 @@ import {
   CardDescription,
 } from '@/components/ui/card'
 import { feelingsService } from '@/services/feelings'
+import { profileService } from '@/services/profile'
 import { useToast } from '@/hooks/use-toast'
 import { Loader2, Sparkles } from 'lucide-react'
 
 export function FeelingInput() {
   const [feeling, setFeeling] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [hasConsent, setHasConsent] = useState<boolean | null>(null)
   const { toast } = useToast()
   const navigate = useNavigate()
+
+  useEffect(() => {
+    const checkConsent = async () => {
+      try {
+        const profile = await profileService.getProfile()
+        setHasConsent(profile.ai_data_consent)
+      } catch (error) {
+        console.error('Error checking consent:', error)
+        // Assume false if we can't check, to be safe
+        setHasConsent(false)
+      }
+    }
+    checkConsent()
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -65,12 +81,12 @@ export function FeelingInput() {
             value={feeling}
             onChange={(e) => setFeeling(e.target.value)}
             className="min-h-[120px] resize-none text-lg p-4 bg-white/80 backdrop-blur-sm focus:ring-primary/20"
-            disabled={isLoading}
+            disabled={isLoading || hasConsent === false}
           />
-          <div className="flex justify-end">
+          <div className="flex flex-col items-end gap-2">
             <Button
               type="submit"
-              disabled={!feeling.trim() || isLoading}
+              disabled={!feeling.trim() || isLoading || hasConsent === false}
               className="bg-primary hover:bg-primary/90 text-white px-8 rounded-full"
             >
               {isLoading ? (
@@ -82,6 +98,18 @@ export function FeelingInput() {
                 'Gerar Recomendações'
               )}
             </Button>
+            {hasConsent === false && (
+              <p className="text-sm text-destructive text-right">
+                Por favor,{' '}
+                <Link
+                  to="/profile"
+                  className="underline underline-offset-4 hover:text-destructive/80 font-medium"
+                >
+                  ative o consentimento de IA nas configurações do seu perfil
+                </Link>{' '}
+                para gerar recomendações.
+              </p>
+            )}
           </div>
         </form>
       </CardContent>

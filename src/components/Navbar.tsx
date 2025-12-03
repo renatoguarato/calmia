@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/use-auth'
 import { UserNav } from './UserNav'
 import { Link, useLocation } from 'react-router-dom'
+import { NotificationBell } from '@/components/notifications/NotificationBell'
 
 export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false)
@@ -81,6 +82,7 @@ export function Navbar() {
                   Histórico
                 </Button>
               </Link>
+              <NotificationBell />
               <UserNav />
             </>
           ) : (
@@ -104,7 +106,12 @@ export function Navbar() {
 
         {/* Mobile Navigation */}
         <div className="md:hidden flex items-center gap-2">
-          {user && <UserNav />}
+          {user && (
+            <>
+              <NotificationBell />
+              <UserNav />
+            </>
+          )}
           <Sheet>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="text-primary">

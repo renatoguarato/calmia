@@ -48,6 +48,17 @@ export interface ActionFeedback {
   feedback_details: string | null
 }
 
+export interface UserNotification {
+  id: string
+  user_id: string
+  notification_type: string
+  title: string
+  message: string
+  is_read: boolean
+  is_dismissed: boolean
+  created_at: string
+}
+
 // AI Response Types
 export interface AIRecommendationResponse {
   empathy: string

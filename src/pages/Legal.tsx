@@ -129,13 +129,6 @@ export default function Legal() {
               </p>
             </section>
           </div>
-
-          <div className="mt-12 rounded-lg bg-muted/30 p-6 text-sm text-muted-foreground text-center">
-            <p>
-              Para dúvidas legais, entre em contato através do email:
-              legal@calmia.com
-            </p>
-          </div>
         </div>
       </div>
     </div>

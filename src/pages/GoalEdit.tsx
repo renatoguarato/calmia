@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { GoalForm } from '@/components/goals/GoalForm'
 import { goalsService } from '@/services/goals'
@@ -16,12 +16,7 @@ export default function GoalEdit() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    if (!id) return
-    loadGoal()
-  }, [id])
-
-  const loadGoal = async () => {
+  const loadGoal = useCallback(async () => {
     try {
       if (!id) return
       const data = await goalsService.getGoalById(id)
@@ -32,7 +27,11 @@ export default function GoalEdit() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [id, navigate])
+
+  useEffect(() => {
+    loadGoal()
+  }, [loadGoal])
 
   const handleSubmit = async (values: any) => {
     if (!id) return

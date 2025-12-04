@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { goalsService, GoalProgress } from '@/services/goals'
 import { WellbeingGoal } from '@/types/db'
@@ -41,12 +41,7 @@ export default function GoalDetails() {
   const [loading, setLoading] = useState(true)
   const [isDeleting, setIsDeleting] = useState(false)
 
-  useEffect(() => {
-    if (!id) return
-    loadData()
-  }, [id])
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       if (!id) return
       const goalData = await goalsService.getGoalById(id)
@@ -65,7 +60,11 @@ export default function GoalDetails() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [id, navigate, toast])
+
+  useEffect(() => {
+    loadData()
+  }, [loadData])
 
   const handleDelete = async () => {
     if (!id) return

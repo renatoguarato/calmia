@@ -121,7 +121,7 @@ export function AuthModal({ trigger, open, onOpenChange }: AuthModalProps) {
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <img
-                src="https://img.usecurling.com/i?q=google"
+                src="https://img.usecurling.com/i?q=google&color=multicolor"
                 alt="Google"
                 className="h-4 w-4"
               />

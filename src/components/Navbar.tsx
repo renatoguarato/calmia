@@ -82,6 +82,14 @@ export function Navbar() {
                   Histórico
                 </Button>
               </Link>
+              <Link to="/progress">
+                <Button
+                  variant="ghost"
+                  className="text-foreground hover:text-primary"
+                >
+                  Progresso
+                </Button>
+              </Link>
               <NotificationBell />
               <UserNav />
             </>
@@ -136,6 +144,14 @@ export function Navbar() {
                         className="w-full justify-start text-lg"
                       >
                         Histórico
+                      </Button>
+                    </Link>
+                    <Link to="/progress">
+                      <Button
+                        variant="ghost"
+                        className="w-full justify-start text-lg"
+                      >
+                        Progresso
                       </Button>
                     </Link>
                     <Link to="/profile">

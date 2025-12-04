@@ -8,6 +8,7 @@ import Dashboard from './pages/Dashboard'
 import Profile from './pages/Profile'
 import RecommendationDetails from './pages/RecommendationDetails'
 import History from './pages/History'
+import Progress from './pages/Progress'
 import NotFound from './pages/NotFound'
 import Layout from './components/Layout'
 import Privacy from './pages/Privacy'
@@ -35,6 +36,7 @@ const App = () => (
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/history" element={<History />} />
+              <Route path="/progress" element={<Progress />} />
               <Route
                 path="/recommendations/:id"
                 element={<RecommendationDetails />}

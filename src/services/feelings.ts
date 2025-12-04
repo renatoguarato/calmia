@@ -72,6 +72,22 @@ export const feelingsService = {
     return data as SuggestedAction[]
   },
 
+  async getAllActions() {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
+    if (!session) throw new Error('User not authenticated')
+
+    const { data, error } = await supabase
+      .from('suggested_actions')
+      .select('*')
+      .eq('user_id', session.user.id)
+      .order('created_at', { ascending: false })
+
+    if (error) throw error
+    return data as SuggestedAction[]
+  },
+
   async completeAction(actionId: string) {
     const {
       data: { session },

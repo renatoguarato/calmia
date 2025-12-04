@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase/client'
-import { WellbeingGoal } from '@/types/db'
+import { WellbeingGoal, FeelingLog } from '@/types/db'
 import {
   startOfDay,
   endOfDay,
@@ -44,13 +44,41 @@ export const goalsService = {
 
     const { data, error } = await supabase
       .from('wellbeing_goals')
-      .select('*')
+      .select(
+        `
+        *,
+        journal_entry_goals (
+          feeling_log_id,
+          feelings_log (
+            id,
+            created_at,
+            feeling_description,
+            feeling_category,
+            log_type
+          )
+        )
+      `,
+      )
       .eq('id', id)
       .eq('user_id', session.user.id)
       .single()
 
     if (error) throw error
-    return data as WellbeingGoal
+
+    // Transform data to include linked entries directly
+    const goal = data as any
+    if (goal.journal_entry_goals) {
+      goal.linked_entries = goal.journal_entry_goals
+        .map((item: any) => item.feelings_log)
+        .filter(Boolean)
+        .sort(
+          (a: FeelingLog, b: FeelingLog) =>
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+        ) as FeelingLog[]
+      delete goal.journal_entry_goals
+    }
+
+    return goal as WellbeingGoal
   },
 
   async createGoal(
@@ -173,8 +201,6 @@ export const goalsService = {
       const { count: c } = await query
       count = c || 0
     } else if (goal.goal_type === 'feelings') {
-      // We need to check category. Since category might be in JSON, we fetch and filter
-      // Optimization: filter by time first
       const query = supabase
         .from('feelings_log')
         .select('feeling_category, ai_response')

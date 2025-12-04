@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { journalService } from '@/services/journal'
+import { goalsService } from '@/services/goals'
 import { useToast } from '@/hooks/use-toast'
 import { Button } from '@/components/ui/button'
 import {
@@ -23,9 +24,12 @@ import {
   CardDescription,
 } from '@/components/ui/card'
 import { ArrowLeft, Loader2, Save } from 'lucide-react'
+import { WellbeingGoal } from '@/types/db'
+import { GoalSelector } from '@/components/journal/GoalSelector'
 
 const formSchema = z.object({
   content: z.string().min(5, 'Sua entrada deve ter pelo menos 5 caracteres'),
+  goalIds: z.array(z.string()).optional(),
 })
 
 type FormValues = z.infer<typeof formSchema>
@@ -34,18 +38,32 @@ export default function JournalCreate() {
   const navigate = useNavigate()
   const { toast } = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [availableGoals, setAvailableGoals] = useState<WellbeingGoal[]>([])
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       content: '',
+      goalIds: [],
     },
   })
+
+  useEffect(() => {
+    const fetchGoals = async () => {
+      try {
+        const goals = await goalsService.getGoals()
+        setAvailableGoals(goals)
+      } catch (error) {
+        console.error('Failed to fetch goals', error)
+      }
+    }
+    fetchGoals()
+  }, [])
 
   const onSubmit = async (data: FormValues) => {
     setIsSubmitting(true)
     try {
-      await journalService.createEntry(data.content)
+      await journalService.createEntry(data.content, data.goalIds)
       toast({
         title: 'Entrada salva!',
         description:
@@ -103,6 +121,24 @@ export default function JournalCreate() {
                           placeholder="Hoje eu me senti..."
                           className="min-h-[300px] resize-none text-base leading-relaxed p-4"
                           {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="goalIds"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Vincular a Metas</FormLabel>
+                      <FormControl>
+                        <GoalSelector
+                          goals={availableGoals}
+                          selectedGoalIds={field.value || []}
+                          onSelect={field.onChange}
                         />
                       </FormControl>
                       <FormMessage />

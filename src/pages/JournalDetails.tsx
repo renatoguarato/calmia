@@ -32,6 +32,7 @@ import {
   Brain,
   TrendingUp,
   Sparkles,
+  Target,
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -190,6 +191,28 @@ export default function JournalDetails() {
                 {entry.feeling_description}
               </CardContent>
             </Card>
+
+            {/* Linked Goals */}
+            {entry.goals && entry.goals.length > 0 && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold flex items-center gap-2">
+                  <Target className="h-5 w-5 text-primary" />
+                  Metas Vinculadas
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {entry.goals.map((goal) => (
+                    <Link key={goal.id} to={`/goals/${goal.id}`}>
+                      <Badge
+                        variant="secondary"
+                        className="px-3 py-1.5 text-sm hover:bg-secondary/80 transition-colors cursor-pointer"
+                      >
+                        {goal.name}
+                      </Badge>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* AI Analysis Sidebar */}

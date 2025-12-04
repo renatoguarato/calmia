@@ -23,6 +23,7 @@ export interface FeelingLog {
   feeling_category: string | null
   ai_response: AIRecommendationResponse | AIJournalAnalysis | null
   log_type: 'check_in' | 'journal'
+  goals?: WellbeingGoal[]
 }
 
 export interface SuggestedAction {
@@ -73,6 +74,14 @@ export interface WellbeingGoal {
   end_date: string | null
   created_at: string
   updated_at: string
+  linked_entries?: FeelingLog[]
+}
+
+export interface JournalEntryGoal {
+  id: string
+  feeling_log_id: string
+  wellbeing_goal_id: string
+  created_at: string
 }
 
 // AI Response Types

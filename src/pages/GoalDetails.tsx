@@ -25,6 +25,7 @@ import {
   Target,
   Zap,
   Heart,
+  Book,
 } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -290,6 +291,50 @@ export default function GoalDetails() {
               </CardContent>
             </Card>
           </div>
+
+          {/* Linked Journals */}
+          {goal.linked_entries && goal.linked_entries.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Book className="h-5 w-5 text-primary" />
+                  Diários Vinculados
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  {goal.linked_entries.map((entry) => (
+                    <Link key={entry.id} to={`/journal/${entry.id}`}>
+                      <div className="p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
+                        <p className="text-sm text-foreground/90 line-clamp-2">
+                          {entry.feeling_description}
+                        </p>
+                        <div className="flex items-center justify-between mt-2">
+                          <span className="text-xs text-muted-foreground">
+                            {format(
+                              new Date(entry.created_at),
+                              "d 'de' MMM, HH:mm",
+                              {
+                                locale: ptBR,
+                              },
+                            )}
+                          </span>
+                          {entry.feeling_category && (
+                            <Badge
+                              variant="outline"
+                              className="text-[10px] px-1.5 h-5"
+                            >
+                              {entry.feeling_category}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </div>

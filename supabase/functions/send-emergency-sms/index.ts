@@ -79,7 +79,7 @@ Deno.serve(async (req) => {
       const params = new URLSearchParams({
         Body: messageBody,
         From: TWILIO_FROM,
-        To: profile.emergency_contact_phone,
+        To: `+55${profile.emergency_contact_phone.replace(/\D/g, '')}`,
       })
 
       const response = await fetch(

@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { goalsService, GoalProgress } from '@/services/goals'
+import { goalsService, GoalProgress, GoalHistoryPoint } from '@/services/goals'
 import { WellbeingGoal } from '@/types/db'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
@@ -32,6 +32,7 @@ import { ptBR } from 'date-fns/locale'
 import { useToast } from '@/hooks/use-toast'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
+import { GoalProgressChart } from '@/components/goals/GoalProgressChart'
 
 export default function GoalDetails() {
   const { id } = useParams<{ id: string }>()
@@ -39,6 +40,7 @@ export default function GoalDetails() {
   const { toast } = useToast()
   const [goal, setGoal] = useState<WellbeingGoal | null>(null)
   const [progress, setProgress] = useState<GoalProgress | null>(null)
+  const [history, setHistory] = useState<GoalHistoryPoint[]>([])
   const [loading, setLoading] = useState(true)
   const [isDeleting, setIsDeleting] = useState(false)
 
@@ -48,8 +50,14 @@ export default function GoalDetails() {
       const goalData = await goalsService.getGoalById(id)
       setGoal(goalData)
 
-      const progressData = await goalsService.calculateProgress(goalData)
+      // Parallel fetch for stats and history
+      const [progressData, historyData] = await Promise.all([
+        goalsService.calculateProgress(goalData),
+        goalsService.getGoalHistory(goalData),
+      ])
+
       setProgress(progressData)
+      setHistory(historyData)
     } catch (error) {
       console.error('Error loading goal details:', error)
       toast({
@@ -213,6 +221,9 @@ export default function GoalDetails() {
             </CardContent>
           </Card>
 
+          {/* Visualization Chart */}
+          <GoalProgressChart goal={goal} history={history} />
+
           {/* Details Grid */}
           <div className="grid md:grid-cols-2 gap-6">
             <Card>
@@ -292,13 +303,13 @@ export default function GoalDetails() {
             </Card>
           </div>
 
-          {/* Linked Journals */}
+          {/* Linked Journals List */}
           {goal.linked_entries && goal.linked_entries.length > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
                   <Book className="h-5 w-5 text-primary" />
-                  Diários Vinculados
+                  Histórico de Diários
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">

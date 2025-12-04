@@ -10,6 +10,10 @@ import {
   isAfter,
   isBefore,
   parseISO,
+  eachDayOfInterval,
+  format,
+  isSameDay,
+  addDays,
 } from 'date-fns'
 
 export type GoalProgress = {
@@ -17,6 +21,14 @@ export type GoalProgress = {
   target: number
   percentage: number
   status: 'Active' | 'Completed' | 'Expired'
+}
+
+export type GoalHistoryPoint = {
+  date: string
+  dateObj: Date
+  value: number
+  cumulative: number
+  linkedEntries: FeelingLog[]
 }
 
 export const goalsService = {
@@ -54,7 +66,8 @@ export const goalsService = {
             created_at,
             feeling_description,
             feeling_category,
-            log_type
+            log_type,
+            ai_response
           )
         )
       `,
@@ -257,5 +270,92 @@ export const goalsService = {
       percentage,
       status,
     }
+  },
+
+  async getGoalHistory(goal: WellbeingGoal): Promise<GoalHistoryPoint[]> {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
+    if (!session) throw new Error('User not authenticated')
+
+    // Determine chart range (from start_date to end_date or today)
+    const startDate = parseISO(goal.start_date)
+    const endDate = goal.end_date ? parseISO(goal.end_date) : new Date()
+    const now = new Date()
+    const chartEndDate = isAfter(endDate, now) ? now : endDate
+
+    // Create dates array
+    const dates = eachDayOfInterval({ start: startDate, end: chartEndDate })
+
+    // Fetch events
+    let events: { date: Date }[] = []
+
+    if (goal.goal_type === 'actions_completed') {
+      const { data } = await supabase
+        .from('suggested_actions')
+        .select('completed_at')
+        .eq('user_id', session.user.id)
+        .eq('is_completed', true)
+        .gte('completed_at', startDate.toISOString())
+        .lte('completed_at', endOfDay(chartEndDate).toISOString())
+
+      if (data) {
+        events = data.map((d) => ({ date: parseISO(d.completed_at!) }))
+      }
+    } else if (goal.goal_type === 'feelings') {
+      const { data } = await supabase
+        .from('feelings_log')
+        .select('created_at, feeling_category, ai_response')
+        .eq('user_id', session.user.id)
+        .gte('created_at', startDate.toISOString())
+        .lte('created_at', endOfDay(chartEndDate).toISOString())
+
+      if (data) {
+        events = data
+          .filter((log) => {
+            if (
+              log.feeling_category?.toLowerCase() ===
+              goal.feeling_category_target?.toLowerCase()
+            )
+              return true
+            const aiMeta = (log.ai_response as any)?.metadata
+              ?.primary_categories
+            if (Array.isArray(aiMeta)) {
+              return aiMeta.some(
+                (c: string) =>
+                  c.toLowerCase() ===
+                  goal.feeling_category_target?.toLowerCase(),
+              )
+            }
+            return false
+          })
+          .map((d) => ({ date: parseISO(d.created_at!) }))
+      }
+    }
+
+    // Build History Points
+    let cumulative = 0
+    const history: GoalHistoryPoint[] = dates.map((date) => {
+      // Count events for this day
+      const dailyEvents = events.filter((e) => isSameDay(e.date, date))
+      const dailyCount = dailyEvents.length
+      cumulative += dailyCount
+
+      // Find linked journal entries for this day
+      const linkedEntries =
+        goal.linked_entries?.filter((entry) =>
+          isSameDay(parseISO(entry.created_at), date),
+        ) || []
+
+      return {
+        date: format(date, 'yyyy-MM-dd'),
+        dateObj: date,
+        value: dailyCount,
+        cumulative: cumulative,
+        linkedEntries,
+      }
+    })
+
+    return history
   },
 }

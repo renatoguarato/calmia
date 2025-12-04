@@ -13,6 +13,10 @@ import Goals from './pages/Goals'
 import GoalCreate from './pages/GoalCreate'
 import GoalDetails from './pages/GoalDetails'
 import GoalEdit from './pages/GoalEdit'
+import Journal from './pages/Journal'
+import JournalCreate from './pages/JournalCreate'
+import JournalDetails from './pages/JournalDetails'
+import JournalEdit from './pages/JournalEdit'
 import NotFound from './pages/NotFound'
 import Layout from './components/Layout'
 import Privacy from './pages/Privacy'
@@ -49,6 +53,10 @@ const App = () => (
                 path="/recommendations/:id"
                 element={<RecommendationDetails />}
               />
+              <Route path="/journal" element={<Journal />} />
+              <Route path="/journal/new" element={<JournalCreate />} />
+              <Route path="/journal/:id" element={<JournalDetails />} />
+              <Route path="/journal/:id/edit" element={<JournalEdit />} />
             </Route>
           </Route>
           <Route path="*" element={<NotFound />} />

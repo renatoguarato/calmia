@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { useAuth } from '@/hooks/use-auth'
 import { Link, useNavigate } from 'react-router-dom'
-import { User, LogOut, LayoutDashboard, TrendingUp } from 'lucide-react'
+import { User, LogOut, LayoutDashboard, TrendingUp, Book } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { profileService } from '@/services/profile'
 import { Profile } from '@/types/db'
@@ -81,6 +81,12 @@ export function UserNav() {
             <Link to="/dashboard" className="cursor-pointer">
               <LayoutDashboard className="mr-2 h-4 w-4" />
               <span>Dashboard</span>
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link to="/journal" className="cursor-pointer">
+              <Book className="mr-2 h-4 w-4" />
+              <span>Diário</span>
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>

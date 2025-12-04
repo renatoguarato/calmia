@@ -21,7 +21,8 @@ export interface FeelingLog {
   created_at: string
   feeling_description: string
   feeling_category: string | null
-  ai_response: AIRecommendationResponse | null
+  ai_response: AIRecommendationResponse | AIJournalAnalysis | null
+  log_type: 'check_in' | 'journal'
 }
 
 export interface SuggestedAction {
@@ -112,4 +113,10 @@ export interface AIRoutineItem {
   category: string
   timeframe: string
   instructions: string
+}
+
+export interface AIJournalAnalysis {
+  summary: string
+  emotional_trends: string[]
+  category: string
 }

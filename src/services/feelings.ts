@@ -30,6 +30,7 @@ export const feelingsService = {
         user_id: session.user.id,
         feeling_description: description,
         feeling_category: 'general',
+        log_type: 'check_in',
       })
       .select()
       .single()
@@ -119,6 +120,7 @@ export const feelingsService = {
       .from('feelings_log')
       .select('*')
       .eq('user_id', session.user.id)
+      .eq('log_type', 'check_in')
       .order('created_at', { ascending: false })
 
     if (error) throw error

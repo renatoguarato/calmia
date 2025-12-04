@@ -46,6 +46,7 @@ const profileSchema = z.object({
   emergency_contact_name: z.string().optional(),
   emergency_contact_phone: z.string().optional(),
   ai_data_consent: z.boolean().default(true),
+  emergency_notification_consent: z.boolean().default(false),
 })
 
 type ProfileFormValues = z.infer<typeof profileSchema>
@@ -69,6 +70,7 @@ export default function Profile() {
       emergency_contact_name: '',
       emergency_contact_phone: '',
       ai_data_consent: true,
+      emergency_notification_consent: false,
     },
   })
 
@@ -88,6 +90,8 @@ export default function Profile() {
           emergency_contact_name: profile.emergency_contact_name || '',
           emergency_contact_phone: profile.emergency_contact_phone || '',
           ai_data_consent: profile.ai_data_consent,
+          emergency_notification_consent:
+            profile.emergency_notification_consent || false,
         })
       } catch (error) {
         console.error('Error loading profile:', error)
@@ -331,10 +335,11 @@ export default function Profile() {
               <CardHeader>
                 <CardTitle>Privacidade e Consentimento</CardTitle>
                 <CardDescription>
-                  Gerencie como seus dados são utilizados pela IA.
+                  Gerencie como seus dados são utilizados pela IA e preferências
+                  de contato.
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
                 <FormField
                   control={form.control}
                   name="ai_data_consent"
@@ -342,11 +347,34 @@ export default function Profile() {
                     <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                       <div className="space-y-0.5">
                         <FormLabel className="text-base">
-                          Habilitar Consentimento para Dados de IA
+                          Consentimento para Dados de IA
                         </FormLabel>
                         <FormDescription>
                           Permitir que a CalmIA utilize seus dados anonimizados
                           para melhorar as recomendações.
+                        </FormDescription>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="emergency_notification_consent"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                      <div className="space-y-0.5">
+                        <FormLabel className="text-base">
+                          Notificações SMS de Emergência
+                        </FormLabel>
+                        <FormDescription>
+                          Permitir envio de SMS para seu contato de emergência
+                          caso um sentimento crítico seja detectado.
                         </FormDescription>
                       </div>
                       <FormControl>

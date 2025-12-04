@@ -5,6 +5,8 @@ import { corsHeaders } from '../_shared/cors.ts'
 const GROQ_API_KEY = Deno.env.get('GROQ_API_KEY')
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? ''
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+const SUPABASE_SERVICE_ROLE_KEY =
+  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -58,6 +60,7 @@ Deno.serve(async (req) => {
       Retorne APENAS um objeto JSON válido (sem markdown, sem explicações) com esta estrutura:
 
       {
+        "is_critical": boolean (true se risco alto ou ideação suicida/dano, false caso contrário),
         "empathy": "1 sentença validando o sentimento relatado",
         "immediate_actions": [
           {
@@ -99,7 +102,7 @@ Deno.serve(async (req) => {
       - 3 ações imediatas obrigatórias
       - 2 ajustes de rotina obrigatórios
       - Análise de risco SEMPRE presente
-      - Se detectar palavras-chave de risco (ideação suicida, desesperança, "quero morrer", etc.), definir level como "high" e requires_emergency como true
+      - Se detectar palavras-chave de risco (ideação suicida, desesperança, "quero morrer", etc.), definir level como "high", requires_emergency como true E is_critical como true
       - Tom empático, direto, sem jargões clínicos
       - NÃO diagnosticar condições médicas
       - Total entre 120-300 palavras considerando todos os textos
@@ -137,6 +140,13 @@ Deno.serve(async (req) => {
       .from('feelings_log')
       .update({ ai_response: recommendation })
       .eq('id', feeling_log_id)
+
+    // Trigger Emergency SMS Check if critical
+    if (recommendation.is_critical) {
+      await supabase.functions.invoke('send-emergency-sms', {
+        body: { user_id, ai_response: recommendation },
+      })
+    }
 
     // Prepare actions to insert
     const actionsToInsert = []

@@ -11,6 +11,7 @@ export interface Profile {
   emergency_contact_name: string | null
   emergency_contact_phone: string | null
   ai_data_consent: boolean
+  emergency_notification_consent: boolean
   avatar_url: string | null
 }
 
@@ -75,6 +76,7 @@ export interface WellbeingGoal {
 
 // AI Response Types
 export interface AIRecommendationResponse {
+  is_critical: boolean
   empathy: string
   immediate_actions: AIActionItem[]
   routine_adjustments: AIRoutineItem[]

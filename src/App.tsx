@@ -9,6 +9,10 @@ import Profile from './pages/Profile'
 import RecommendationDetails from './pages/RecommendationDetails'
 import History from './pages/History'
 import Progress from './pages/Progress'
+import Goals from './pages/Goals'
+import GoalCreate from './pages/GoalCreate'
+import GoalDetails from './pages/GoalDetails'
+import GoalEdit from './pages/GoalEdit'
 import NotFound from './pages/NotFound'
 import Layout from './components/Layout'
 import Privacy from './pages/Privacy'
@@ -37,6 +41,10 @@ const App = () => (
               <Route path="/profile" element={<Profile />} />
               <Route path="/history" element={<History />} />
               <Route path="/progress" element={<Progress />} />
+              <Route path="/goals" element={<Goals />} />
+              <Route path="/goals/new" element={<GoalCreate />} />
+              <Route path="/goals/:id" element={<GoalDetails />} />
+              <Route path="/goals/:id/edit" element={<GoalEdit />} />
               <Route
                 path="/recommendations/:id"
                 element={<RecommendationDetails />}

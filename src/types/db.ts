@@ -59,6 +59,20 @@ export interface UserNotification {
   created_at: string
 }
 
+export interface WellbeingGoal {
+  id: string
+  user_id: string
+  name: string
+  goal_type: 'feelings' | 'actions_completed'
+  target_value: number
+  time_period: 'daily' | 'weekly' | 'monthly' | 'custom'
+  feeling_category_target: string | null
+  start_date: string
+  end_date: string | null
+  created_at: string
+  updated_at: string
+}
+
 // AI Response Types
 export interface AIRecommendationResponse {
   empathy: string

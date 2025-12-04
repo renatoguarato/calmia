@@ -142,7 +142,7 @@ Deno.serve(async (req) => {
       .eq('id', feeling_log_id)
 
     // Trigger Emergency SMS Check if critical
-    if (recommendation.is_critical) {
+    if (recommendation.is_critical && profile?.emergency_notification_consent) {
       await supabase.functions.invoke('send-emergency-sms', {
         body: { user_id, ai_response: recommendation },
       })

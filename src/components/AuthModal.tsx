@@ -120,11 +120,7 @@ export function AuthModal({ trigger, open, onOpenChange }: AuthModalProps) {
             {isLoading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              <img
-                src="google.png"
-                alt="Google"
-                className="h-4 w-4"
-              />
+              <img src="google.png" alt="Google" className="h-4 w-4" />
             )}
             Entrar com Google
           </Button>

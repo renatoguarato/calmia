@@ -1,6 +1,5 @@
-# Projeto Criado com o Skip
+# Calmia
 
-Este projeto foi criado de ponta a ponta com o [Skip](https://goskip.dev).
 
 ## 🚀 Stack Tecnológica
 
